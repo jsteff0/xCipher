@@ -62,13 +62,13 @@ const uint8_t gmul(uint8_t a, uint8_t b)
 uint8_t ShiftBits(uint8_t byteinput, int shift, bool inv = false)
 {
 	uint8_t newbyte;
-	if (inv)
+	if (!inv)
 	{
-		newbyte = (byteinput >> shift) | (byteinput << (8 - shift));
+		newbyte = (byteinput << shift) | (byteinput >> (8 - shift));
 	}
 	else
 	{
-		newbyte = (byteinput << shift) | (byteinput >> (8 - shift));
+		newbyte = (byteinput >> shift) | (byteinput << (8 - shift));
 	}
 	return newbyte;
 }
@@ -105,16 +105,25 @@ uint8_t SubBytes(uint8_t byte, bool inv = false)
 	else
 		return invSBox[byte];
 }
-vector<vector<uint8_t>> MixColumns(vector<vector<uint8_t>> &state, vector<vector<uint8_t>> &miningConstants)
+vector<vector<uint8_t>> MixColumns(vector<vector<uint8_t>> &state, vector<vector<uint8_t>> &miningConstants, vector<vector<uint8_t>> &key, bool inv = false)
 {
 	vector<vector<uint8_t>> temp(4, vector<uint8_t>(4, 0x00));
+	state = ShiftColumns(state, inv);
 	for (int c = 0; c < 4; c++)
 	{
 		for (int i = 0; i < 4; i++)
 		{
-			temp[i][c] = gmul(state[0][c], miningConstants[i][0]) ^ gmul(state[1][c], miningConstants[i][1]) ^ gmul(state[2][c], miningConstants[i][2]) ^ gmul(state[3][c], miningConstants[i][3]);
+			if (!inv)
+			{	
+				temp[i][c] = gmul(state[0][c], miningConstants[i][0]) ^ gmul(state[1][c], miningConstants[i][1]) ^ gmul(state[2][c], miningConstants[i][2]) ^ gmul(state[3][c], miningConstants[i][3]);
+				temp[i][c] = temp[i][c] ^ key[i][c];
+			} else {
+				temp[i][c] = temp[i][c] ^ key[i][c];
+				temp[i][c] = gmul(state[0][c], miningConstants[i][0]) ^ gmul(state[1][c], miningConstants[i][1]) ^ gmul(state[2][c], miningConstants[i][2]) ^ gmul(state[3][c], miningConstants[i][3]);
+			}
 		}
 	}
+	state = ShiftColumns(state, inv);
 	for (int i = 0; i < 4; i++)
 		for (int j = 0; j < 4; j++)
 			state[i][j] = temp[i][j];
@@ -283,7 +292,7 @@ int main()
 					matrix[i][j] = matrix[i][j] ^ matrixKey[round + 1][i][j];
 				}
 			}
-			matrix = MixColumns(matrix, invMixingConstants);
+			matrix = MixColumns(matrix, invMixingConstants, true);
 			for (int i = 0; i < 4; i++)
 			{
 				for (int j = 0; j < 4; j++)
