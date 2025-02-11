@@ -108,25 +108,22 @@ uint8_t SubBytes(uint8_t byte, bool inv = false)
 vector<vector<uint8_t>> MixColumns(vector<vector<uint8_t>> &state, vector<vector<uint8_t>> &miningConstants, vector<vector<uint8_t>> &key, bool inv = false)
 {
 	vector<vector<uint8_t>> temp(4, vector<uint8_t>(4, 0x00));
+	if (inv)
+		for (int i = 0; i < 4; i++)
+			for (int j = 0; j < 4; j++)
+				state[i][j] = state[i][j] ^ key[i][3 - j];
 	state = ShiftColumns(state, inv);
 	for (int c = 0; c < 4; c++)
 	{
 		for (int i = 0; i < 4; i++)
 		{
-			if (!inv)
-			{	
-				temp[i][c] = gmul(state[0][c], miningConstants[i][0]) ^ gmul(state[1][c], miningConstants[i][1]) ^ gmul(state[2][c], miningConstants[i][2]) ^ gmul(state[3][c], miningConstants[i][3]);
-				temp[i][c] = temp[i][c] ^ key[i][c];
-			} else {
-				temp[i][c] = temp[i][c] ^ key[i][c];
-				temp[i][c] = gmul(state[0][c], miningConstants[i][0]) ^ gmul(state[1][c], miningConstants[i][1]) ^ gmul(state[2][c], miningConstants[i][2]) ^ gmul(state[3][c], miningConstants[i][3]);
-			}
+			temp[i][c] = gmul(state[0][c], miningConstants[i][0]) ^ gmul(state[1][c], miningConstants[i][1]) ^ gmul(state[2][c], miningConstants[i][2]) ^ gmul(state[3][c], miningConstants[i][3]);
 		}
 	}
 	state = ShiftColumns(state, inv);
 	for (int i = 0; i < 4; i++)
 		for (int j = 0; j < 4; j++)
-			state[i][j] = temp[i][j];
+			state[i][j] = inv ? (temp[i][j]) : (temp[i][j] ^ key[i][3 - j]);
 	return state;
 }
 vector<vector<uint8_t>> KeyExpansion(vector<vector<uint8_t>> matrixKey)
@@ -240,7 +237,7 @@ int main()
 					matrix[i][j] = subbed;
 				}
 			}
-			matrix = MixColumns(matrix, mixingConstants);
+			matrix = MixColumns(matrix, mixingConstants, matrixKey[5 - round]);
 			for (int i = 0; i < 4; i++)
 			{
 				for (int j = 0; j < 4; j++)
@@ -292,7 +289,7 @@ int main()
 					matrix[i][j] = matrix[i][j] ^ matrixKey[round + 1][i][j];
 				}
 			}
-			matrix = MixColumns(matrix, invMixingConstants, true);
+			matrix = MixColumns(matrix, invMixingConstants, matrixKey[round + 1], true);
 			for (int i = 0; i < 4; i++)
 			{
 				for (int j = 0; j < 4; j++)
