@@ -72,6 +72,32 @@ uint8_t ShiftBits(uint8_t byteinput, int shift, bool inv = false)
 	}
 	return newbyte;
 }
+vector<vector<uint8_t>> ShiftColumns(vector<vector<uint8_t>> matrix, bool inv = false)
+{
+	if (!inv)
+	{
+		for (int i = 0; i < 4; i++)
+		{
+			for (int j = 0; j < 3; j++)
+			{
+				swap(matrix[i][j], matrix[i][j + 1]);
+			}
+		}
+	}
+	else
+	{
+		for (int i = 0; i < 4; i++)
+		{
+			for (int j = 3; j > 0; j--)
+			{
+				swap(matrix[i][j], matrix[i][j - 1]);
+			}
+		}
+	}
+
+	return matrix;
+}
+
 uint8_t SubBytes(uint8_t byte, bool inv = false)
 {
 	if (!inv)
@@ -84,10 +110,10 @@ vector<vector<uint8_t>> MixColumns(vector<vector<uint8_t>> &state, vector<vector
 	vector<vector<uint8_t>> temp(4, vector<uint8_t>(4, 0x00));
 	for (int c = 0; c < 4; c++)
 	{
-		temp[0][c] = gmul(state[0][c], miningConstants[0][0]) ^ gmul(state[1][c], miningConstants[0][1]) ^ gmul(state[2][c], miningConstants[0][2]) ^ gmul(state[3][c], miningConstants[0][3]);
-		temp[1][c] = gmul(state[0][c], miningConstants[1][0]) ^ gmul(state[1][c], miningConstants[1][1]) ^ gmul(state[2][c], miningConstants[1][2]) ^ gmul(state[3][c], miningConstants[1][3]);
-		temp[2][c] = gmul(state[0][c], miningConstants[2][0]) ^ gmul(state[1][c], miningConstants[2][1]) ^ gmul(state[2][c], miningConstants[2][2]) ^ gmul(state[3][c], miningConstants[2][3]);
-		temp[3][c] = gmul(state[0][c], miningConstants[3][0]) ^ gmul(state[1][c], miningConstants[3][1]) ^ gmul(state[2][c], miningConstants[3][2]) ^ gmul(state[3][c], miningConstants[3][3]);
+		for (int i = 0; i < 4; i++)
+		{
+			temp[i][c] = gmul(state[0][c], miningConstants[i][0]) ^ gmul(state[1][c], miningConstants[i][1]) ^ gmul(state[2][c], miningConstants[i][2]) ^ gmul(state[3][c], miningConstants[i][3]);
+		}
 	}
 	for (int i = 0; i < 4; i++)
 		for (int j = 0; j < 4; j++)
