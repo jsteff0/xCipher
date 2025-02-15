@@ -126,25 +126,7 @@ vector<vector<uint8_t>> MixColumns(vector<vector<uint8_t>> &state, vector<vector
 			state[i][j] = inv ? (temp[i][j]) : (temp[i][j] ^ key[i][3 - j]);
 	return state;
 }
-vector<vector<uint8_t>> SwapBytes(vector<vector<uint8_t>> &state, vector<vector<uint8_t>> &key)
-{
-	
 
-	for (int i = 0; i < 4; i++)
-	{
-		for (int j = 0; j < 4; j++)
-		{
-			int firstIndexX = (((key[i][j] & 0xF0) >> 4)-1)/4;
-			int firstIndexY = (((key[i][j] & 0xF0) >> 4)-1)%4;
-			int secondIndexX = ((key[i][j] & 0x0F)-1)/4;
-			int secondIndexY = ((key[i][j] & 0x0F)-1)%4;
-			swap(state[firstIndexX][firstIndexY], state[secondIndexX][secondIndexY]);
-		}
-		
-	}
-	
-	return state;
-}
 vector<vector<uint8_t>> KeyExpansion(vector<vector<uint8_t>> matrixKey)
 {
 	swap(matrixKey[0][3], matrixKey[1][3]);
@@ -190,6 +172,41 @@ void print_matrix(const vector<vector<uint8_t>> &matrix)
 		cout << endl;
 	}
 }
+vector<vector<uint8_t>> SwapBytes(vector<vector<uint8_t>> &state, vector<vector<uint8_t>> &key, bool inv = false)
+{
+	if (!inv)
+	{
+		for (int i = 0; i < 4; i++)
+		{
+			for (int j = 0; j < 4; j++)
+			{
+				int firstIndex = (key[i][j] & 0xF0) >> 4;
+				int secondIndex = key[i][j] & 0x0F;
+				swap(state[firstIndex / 4][firstIndex % 4], state[secondIndex / 4][secondIndex % 4]);
+			}
+		}
+	} else {
+		for (int i = 3; i >= 0; i--)
+		{
+			for (int j = 3; j >= 0; j--)
+			{
+				int firstIndex = (key[i][j] & 0xF0) >> 4;
+				int secondIndex = key[i][j] & 0x0F;
+				swap(state[firstIndex / 4][firstIndex % 4], state[secondIndex / 4][secondIndex % 4]);
+			}
+		}
+	}
+	return state;
+}
+// a5 19 bf 8f
+// 66 13 b7 b2
+// 89 39 e6 d1
+// 4c ff 24 70
+
+// 8c 19 39 d1
+// e6 b2 8f ff
+// 13 4c bf 66
+// 89 a5 24 70
 int main()
 {
 	string text;
@@ -257,7 +274,6 @@ int main()
 				}
 			}
 			matrix = MixColumns(matrix, mixingConstants, matrixKey[5 - round]);
-			matrix = SwapBytes(matrix, matrixKey[5 - round]);
 			for (int i = 0; i < 4; i++)
 			{
 				for (int j = 0; j < 4; j++)
@@ -265,6 +281,7 @@ int main()
 					matrix[i][j] = matrix[i][j] ^ matrixKey[5 - round][i][j];
 				}
 			}
+			matrix = SwapBytes(matrix, matrixKey[5 - round]);
 		}
 		stringstream ss;
 		for (int i = 0; i < 4; i++)
@@ -302,6 +319,7 @@ int main()
 				{0x09, 0x0e, 0x0b, 0x0d},
 				{0x0d, 0x09, 0x0e, 0x0b},
 				{0x0b, 0x0d, 0x09, 0x0e}};
+			matrix = SwapBytes(matrix, matrixKey[round + 1], true);
 			for (int i = 0; i < 4; i++)
 			{
 				for (int j = 0; j < 4; j++)
@@ -309,7 +327,6 @@ int main()
 					matrix[i][j] = matrix[i][j] ^ matrixKey[round + 1][i][j];
 				}
 			}
-			matrix = SwapBytes(matrix, matrixKey[round + 1]);
 			matrix = MixColumns(matrix, invMixingConstants, matrixKey[round + 1], true);
 			for (int i = 0; i < 4; i++)
 			{
