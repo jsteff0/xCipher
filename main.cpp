@@ -64,17 +64,17 @@ uint8_t ShiftBits(uint8_t byteinput, uint8_t keybyte, int shift, bool inv = fals
 	uint8_t newbyte;
 	if (!inv)
 	{
-		if(keybyte % 2 == 0)
+		if (keybyte % 2 == 0)
 			newbyte = (byteinput << shift) | (byteinput >> (8 - shift));
 		else
 			newbyte = (byteinput >> shift) | (byteinput << (8 - shift));
 	}
 	else
 	{
-		if(keybyte % 2 == 0)
-			newbyte = (byteinput << shift) | (byteinput >> (8 - shift));
-		else
+		if (keybyte % 2 == 0)
 			newbyte = (byteinput >> shift) | (byteinput << (8 - shift));
+		else
+			newbyte = (byteinput << shift) | (byteinput >> (8 - shift));
 	}
 	return newbyte;
 }
@@ -191,7 +191,9 @@ vector<vector<uint8_t>> SwapBytes(vector<vector<uint8_t>> &state, vector<vector<
 				swap(state[firstIndex / 4][firstIndex % 4], state[secondIndex / 4][secondIndex % 4]);
 			}
 		}
-	} else {
+	}
+	else
+	{
 		for (int i = 3; i >= 0; i--)
 		{
 			for (int j = 3; j >= 0; j--)
@@ -339,7 +341,7 @@ int main()
 				for (int j = 0; j < 4; j++)
 				{
 					uint8_t subbed = SubBytes(matrix[i][j], true);
-					uint8_t shifted = ShiftBits(subbed, (i * 4 + j) % 8, true);
+					uint8_t shifted = ShiftBits(subbed, matrixKey[round + 1][i][j], (i * 4 + j) % 8, true);
 					matrix[i][j] = shifted;
 				}
 			}
