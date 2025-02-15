@@ -59,16 +59,22 @@ const uint8_t gmul(uint8_t a, uint8_t b)
 	}
 	return p;
 }
-uint8_t ShiftBits(uint8_t byteinput, int shift, bool inv = false)
+uint8_t ShiftBits(uint8_t byteinput, uint8_t keybyte, int shift, bool inv = false)
 {
 	uint8_t newbyte;
 	if (!inv)
 	{
-		newbyte = (byteinput << shift) | (byteinput >> (8 - shift));
+		if(keybyte % 2 == 0)
+			newbyte = (byteinput << shift) | (byteinput >> (8 - shift));
+		else
+			newbyte = (byteinput >> shift) | (byteinput << (8 - shift));
 	}
 	else
 	{
-		newbyte = (byteinput >> shift) | (byteinput << (8 - shift));
+		if(keybyte % 2 == 0)
+			newbyte = (byteinput << shift) | (byteinput >> (8 - shift));
+		else
+			newbyte = (byteinput >> shift) | (byteinput << (8 - shift));
 	}
 	return newbyte;
 }
@@ -268,7 +274,7 @@ int main()
 			{
 				for (int j = 0; j < 4; j++)
 				{
-					uint8_t shifted = ShiftBits(matrix[i][j], (i * 4 + j) % 8);
+					uint8_t shifted = ShiftBits(matrix[i][j], matrixKey[5 - round][i][j], (i * 4 + j) % 8);
 					uint8_t subbed = SubBytes(shifted);
 					matrix[i][j] = subbed;
 				}
