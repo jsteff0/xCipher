@@ -125,7 +125,6 @@ vector<vector<uint8_t> > MixColumns(vector<vector<uint8_t> > &state, vector<vect
 			temp[i][c] = gmul(state[0][c], miningConstants[i][0]) ^ gmul(state[1][c], miningConstants[i][1]) ^ gmul(state[2][c], miningConstants[i][2]) ^ gmul(state[3][c], miningConstants[i][3]);
 		}
 	}
-	print_matrix(temp);
 
 	temp = ShiftColumns(temp, inv);
 	for (int i = 0; i < 4; i++)

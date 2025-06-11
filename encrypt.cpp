@@ -30,9 +30,9 @@ int main()
 	string plaintext = "";
 	string outputtext = "";
 	vector<vector<vector<uint8_t> > > matrixKey(6, vector<vector<uint8_t> >(4, vector<uint8_t>(4, 0x00)));
-	cout << "Enter your text" << endl;
+	cout << "Enter message:" << endl;
 	getline(cin, text);
-	cout << "Enter your key in hex" << endl;
+	cout << "Enter key (hex, 32 chars):" << endl;
 	getline(cin, key);
 	cout << endl;
 	if (key.size() != 32)
