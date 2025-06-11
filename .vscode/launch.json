@@ -5,7 +5,12 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${fileDirname}/${fileBasenameNoExtension}",
-            "args": [],
+            "args": [
+                "-g",
+                "${file}",
+                "-o",
+                "${fileDirname}/${fileBasenameNoExtension}"
+            ],
             "stopAtEntry": false,
             "cwd": "${fileDirname}",
             "environment": [],
@@ -14,16 +19,15 @@
             "preLaunchTask": "C/C++: clang++ сборка активного файла"
         },
         {
-            "name": "Debug C++",
+            "name": "GDB Debugging on Mac",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/main",
-            "args": [],
-            "stopAtEntry": false,
+            "program": "${workspaceFolder}/${fileWorkspaceFolderBasename}",
             "cwd": "${workspaceFolder}",
+            "MIMode": "gdb",
+            "MIDebuggerPath": "/usr/local/bin/gdb",
             "externalConsole": true,
-            "MIMode": "lldb",
-            "miDebuggerPath": "/opt/homebrew/opt/llvm/bin/lldb-mi"
+            "stopAtEntry": false
         }
     ],
     "version": "2.0.0"

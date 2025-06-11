@@ -1,11 +1,22 @@
 #include <iostream>
-#include <vector>
 #include <algorithm>
 #include <cmath>
 #include <sstream>
 #include <iomanip>
-using namespace std;
 
+#include "xCipher_utils.h"
+using namespace std;
+void print_matrix(const vector<vector<uint8_t>> &matrix)
+{
+	for (const auto &row : matrix)
+	{
+		for (const auto &byte : row)
+		{
+			cout << hex << setw(2) << setfill('0') << static_cast<int>(byte) << " ";
+		}
+		cout << endl;
+	}
+}
 vector<uint8_t> sbox = {
 	// 0     1    2     3     4    5    6    7    8    9    A    B    C    D    E    F
 	0x63, 0x7c, 0x77, 0x7b, 0xf2, 0x6b, 0x6f, 0xc5, 0x30, 0x01, 0x67, 0x2b, 0xfe, 0xd7, 0xab, 0x76, // 0
@@ -44,179 +55,12 @@ vector<uint8_t> invSBox = {
 	0xa0, 0xe0, 0x3b, 0x4d, 0xae, 0x2a, 0xf5, 0xb0, 0xc8, 0xeb, 0xbb, 0x3c, 0x83, 0x53, 0x99, 0x61,
 	0x17, 0x2b, 0x04, 0x7e, 0xba, 0x77, 0xd6, 0x26, 0xe1, 0x69, 0x14, 0x63, 0x55, 0x21, 0x0c, 0x7d};
 
-const uint8_t gmul(uint8_t a, uint8_t b)
-{
-	uint8_t p = 0;
-	for (int i = 0; i < 8 && a; i++)
-	{
-		if (a & 1)
-			p ^= b;
-		bool hi_bit_set = b & 0x80;
-		b <<= 1;
-		if (hi_bit_set)
-			b ^= 0x11b;
-		a >>= 1;
-	}
-	return p;
-}
-uint8_t ShiftBits(uint8_t byteinput, uint8_t keybyte, int shift, bool inv = false)
-{
-	uint8_t newbyte;
-	if (!inv)
-	{
-		if (keybyte % 2 == 0)
-			newbyte = (byteinput << shift) | (byteinput >> (8 - shift));
-		else
-			newbyte = (byteinput >> shift) | (byteinput << (8 - shift));
-	}
-	else
-	{
-		if (keybyte % 2 == 0)
-			newbyte = (byteinput >> shift) | (byteinput << (8 - shift));
-		else
-			newbyte = (byteinput << shift) | (byteinput >> (8 - shift));
-	}
-	return newbyte;
-}
-vector<vector<uint8_t>> ShiftColumns(vector<vector<uint8_t>> matrix, bool inv = false)
-{
-	if (!inv)
-	{
-		for (int i = 0; i < 4; i++)
-		{
-			for (int j = 0; j < 3; j++)
-			{
-				swap(matrix[i][j], matrix[i][j + 1]);
-			}
-		}
-	}
-	else
-	{
-		for (int i = 0; i < 4; i++)
-		{
-			for (int j = 3; j > 0; j--)
-			{
-				swap(matrix[i][j], matrix[i][j - 1]);
-			}
-		}
-	}
 
-	return matrix;
-}
 
-uint8_t SubBytes(uint8_t byte, bool inv = false)
-{
-	if (!inv)
-		return sbox[byte];
-	else
-		return invSBox[byte];
-}
-vector<vector<uint8_t>> MixColumns(vector<vector<uint8_t>> &state, vector<vector<uint8_t>> &miningConstants, vector<vector<uint8_t>> &key, bool inv = false)
-{
-	vector<vector<uint8_t>> temp(4, vector<uint8_t>(4, 0x00));
-	if (inv)
-		for (int i = 0; i < 4; i++)
-			for (int j = 0; j < 4; j++)
-				state[i][j] = state[i][j] ^ key[i][3 - j];
-	state = ShiftColumns(state, inv);
-	for (int c = 0; c < 4; c++)
-	{
-		for (int i = 0; i < 4; i++)
-		{
-			temp[i][c] = gmul(state[0][c], miningConstants[i][0]) ^ gmul(state[1][c], miningConstants[i][1]) ^ gmul(state[2][c], miningConstants[i][2]) ^ gmul(state[3][c], miningConstants[i][3]);
-		}
-	}
-	state = ShiftColumns(state, inv);
-	for (int i = 0; i < 4; i++)
-		for (int j = 0; j < 4; j++)
-			state[i][j] = inv ? (temp[i][j]) : (temp[i][j] ^ key[i][3 - j]);
-	return state;
-}
 
-vector<vector<uint8_t>> KeyExpansion(vector<vector<uint8_t>> matrixKey)
-{
-	swap(matrixKey[0][3], matrixKey[1][3]);
-	swap(matrixKey[1][3], matrixKey[2][3]);
-	swap(matrixKey[2][3], matrixKey[3][3]);
-	matrixKey[0][0] = matrixKey[0][3] ^ matrixKey[0][0];
-	matrixKey[1][0] = matrixKey[1][3] ^ matrixKey[1][0];
-	matrixKey[2][0] = matrixKey[2][3] ^ matrixKey[2][0];
-	matrixKey[3][0] = matrixKey[3][3] ^ matrixKey[3][0];
-
-	matrixKey[0][1] = matrixKey[0][0] ^ SubBytes(matrixKey[0][0]);
-	matrixKey[1][1] = matrixKey[1][0] ^ SubBytes(matrixKey[1][0]);
-	matrixKey[2][1] = matrixKey[2][0] ^ SubBytes(matrixKey[2][0]);
-	matrixKey[3][1] = matrixKey[3][0] ^ SubBytes(matrixKey[3][0]);
-
-	matrixKey[0][2] = matrixKey[0][1] ^ SubBytes(matrixKey[0][1]);
-	matrixKey[1][2] = matrixKey[1][1] ^ SubBytes(matrixKey[1][1]);
-	matrixKey[2][2] = matrixKey[2][1] ^ SubBytes(matrixKey[2][1]);
-	matrixKey[3][2] = matrixKey[3][1] ^ SubBytes(matrixKey[3][1]);
-
-	matrixKey[0][3] = matrixKey[0][2] ^ (SubBytes(matrixKey[0][0]) ^ matrixKey[0][0]);
-	matrixKey[1][3] = matrixKey[1][2] ^ (SubBytes(matrixKey[1][0]) ^ matrixKey[1][0]);
-	matrixKey[2][3] = matrixKey[2][2] ^ (SubBytes(matrixKey[2][0]) ^ matrixKey[2][0]);
-	matrixKey[3][3] = matrixKey[3][2] ^ (SubBytes(matrixKey[3][0]) ^ matrixKey[3][0]);
-
-	for (int i = 0; i < 4; i++)
-	{
-		for (int j = 0; j < 4; j++)
-		{
-			matrixKey[i][j] = SubBytes(matrixKey[i][j]);
-		}
-	}
-	return matrixKey;
-}
-void print_matrix(const vector<vector<uint8_t>> &matrix)
-{
-	for (const auto &row : matrix)
-	{
-		for (const auto &byte : row)
-		{
-			cout << hex << setw(2) << setfill('0') << static_cast<int>(byte) << " ";
-		}
-		cout << endl;
-	}
-}
-vector<vector<uint8_t>> SwapBytes(vector<vector<uint8_t>> &state, vector<vector<uint8_t>> &key, bool inv = false)
-{
-	if (!inv)
-	{
-		for (int i = 0; i < 4; i++)
-		{
-			for (int j = 0; j < 4; j++)
-			{
-				int firstIndex = (key[i][j] & 0xF0) >> 4;
-				int secondIndex = key[i][j] & 0x0F;
-				swap(state[firstIndex / 4][firstIndex % 4], state[secondIndex / 4][secondIndex % 4]);
-			}
-		}
-	}
-	else
-	{
-		for (int i = 3; i >= 0; i--)
-		{
-			for (int j = 3; j >= 0; j--)
-			{
-				int firstIndex = (key[i][j] & 0xF0) >> 4;
-				int secondIndex = key[i][j] & 0x0F;
-				swap(state[firstIndex / 4][firstIndex % 4], state[secondIndex / 4][secondIndex % 4]);
-			}
-		}
-	}
-	return state;
-}
-// a5 19 bf 8f
-// 66 13 b7 b2
-// 89 39 e6 d1
-// 4c ff 24 70
-
-// 8c 19 39 d1
-// e6 b2 8f ff
-// 13 4c bf 66
-// 89 a5 24 70
 int main()
 {
+
 	string text;
 	string key;
 	string ciphertext = "";
@@ -234,6 +78,8 @@ int main()
 		return 0;
 	}
 	vector<uint8_t> hextext(text.begin(), text.end());
+	
+
 	for (int i = 0, forMatrix = 0; i < 4; i++)
 	{
 		for (int j = 0; j < 4; j++, forMatrix += 2)
@@ -248,13 +94,12 @@ int main()
 	matrixKey[3] = KeyExpansion(matrixKey[2]);
 	matrixKey[4] = KeyExpansion(matrixKey[3]);
 	matrixKey[5] = KeyExpansion(matrixKey[4]);
-
-	for (int block = 0; block < hextext.size(); block += 32)
+	for (int block = 0; block < hextext.size(); block += 16)
 	{
-		vector<vector<uint8_t>> matrix(4, vector<uint8_t>(4, 0x00));
-		for (int u = block, i = 0, j = 0; u < hextext.size() && u < block + 32; u++)
-		{
 
+		vector<vector<uint8_t>> matrix(4, vector<uint8_t>(4, 0x00));
+		for (int u = block, i = 0, j = 0; u < hextext.size() && u < block + 16; u++)
+		{
 			if (j == 4)
 			{
 				i++;
@@ -263,15 +108,16 @@ int main()
 			matrix[i][j] = hextext[u];
 			j++;
 		}
+
 		int round = 5;
 		while (round--)
 		{
-
 			vector<vector<uint8_t>> mixingConstants = {
 				{0x02, 0x03, 0x01, 0x01},
 				{0x01, 0x02, 0x03, 0x01},
 				{0x01, 0x01, 0x02, 0x03},
 				{0x03, 0x01, 0x01, 0x02}};
+
 			for (int i = 0; i < 4; i++)
 			{
 				for (int j = 0; j < 4; j++)
@@ -281,6 +127,8 @@ int main()
 					matrix[i][j] = subbed;
 				}
 			}
+
+
 			matrix = MixColumns(matrix, mixingConstants, matrixKey[5 - round]);
 			for (int i = 0; i < 4; i++)
 			{
@@ -319,6 +167,7 @@ int main()
 			matrix[i][j] = byte;
 			j++;
 		}
+
 		int round = 5;
 		while (round--)
 		{
@@ -327,7 +176,10 @@ int main()
 				{0x09, 0x0e, 0x0b, 0x0d},
 				{0x0d, 0x09, 0x0e, 0x0b},
 				{0x0b, 0x0d, 0x09, 0x0e}};
+
 			matrix = SwapBytes(matrix, matrixKey[round + 1], true);
+
+
 			for (int i = 0; i < 4; i++)
 			{
 				for (int j = 0; j < 4; j++)
@@ -335,6 +187,8 @@ int main()
 					matrix[i][j] = matrix[i][j] ^ matrixKey[round + 1][i][j];
 				}
 			}
+
+
 			matrix = MixColumns(matrix, invMixingConstants, matrixKey[round + 1], true);
 			for (int i = 0; i < 4; i++)
 			{
